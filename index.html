@@ -335,12 +335,13 @@ function totalCheckinDays(checkinMap){return Object.keys(checkinMap).length}
 function renderPlan(){
   const c=document.getElementById('content');
   const tk=todayKey();
-  // 统计:运动 + 自定义 + 英语2项打卡
+  // 统计:运动 + 自定义 + 英语进度(单词8个按掌握数量,场景1个)
   const taskAll=[...state.sport,...state.custom];
   const taskDone=taskAll.filter(i=>i.done).length;
-  const wordDone=state.wordCheckin[tk]?1:0;
+  const wordRec=state.wordCheckin[tk];
+  const wordDone=wordRec&&wordRec.known?wordRec.known.length:0;
   const sceneDone=state.sceneCheckin[tk]?1:0;
-  const total=taskAll.length+2;
+  const total=taskAll.length+8+1; // 8个单词 + 1个场景
   const done=taskDone+wordDone+sceneDone;
   const pct=total?Math.round(done/total*100):0;
 
@@ -625,11 +626,12 @@ function renderEnglishCheckin(){
   const todayScene=getTodayScene();
 
   // 单词打卡区块
+  const knownCount=wordRec&&wordRec.known?wordRec.known.length:0;
   let wordHtml=`
     <div class="checkin-block">
       <div class="checkin-top">
         <div class="checkin-title">📖 新概念单词打卡</div>
-        ${wordRec?`<span class="checkin-done">✓ 已打卡</span>`:`<span class="checkin-undo">未打卡</span>`}
+        ${knownCount>=8?`<span class="checkin-done">✓ 已打卡</span>`:`<span class="checkin-undo">未打卡</span>`}
       </div>
       <div class="checkin-stats">
         <span>🔥 连续 <b>${wordStreak}</b> 天</span>
@@ -639,16 +641,12 @@ function renderEnglishCheckin(){
       <div class="word-list">`;
   todayWords.forEach((wd,i)=>{
     const known=wordRec&&wordRec.known&&wordRec.known.includes(i);
-    wordHtml+=`<div class="word-item ${known?'known':''}" data-word-idx="${i}"><div class="word-en">${wd.w}<button class="speak-btn" data-speak="${wd.w}" ontouchend="event.preventDefault();speakText(this)">🔊</button><span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:auto">${known?'✓ 已掌握':''}</span></div><div class="word-phonetic">${wd.p}</div><div class="word-cn">${wd.m}</div><div class="word-example">${escapeHtml(wd.e)}<button class="speak-btn" data-speak="${escapeHtml(wd.e)}" ontouchend="event.preventDefault();speakText(this)">🔊</button></div><div class="word-example-zh">${escapeHtml(wd.ez)}</div></div>`;
+    wordHtml+=`<div class="word-item ${known?'known':''}" data-word-idx="${i}" role="button" onclick="toggleWord(${i})" ontouchend="event.preventDefault();toggleWord(${i})"><div class="word-en">${wd.w}<button class="speak-btn" data-speak="${wd.w}" onclick="event.stopPropagation();speakText(this)" ontouchend="event.stopPropagation();event.preventDefault();speakText(this)">🔊</button><span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:auto">${known?'✓ 已掌握':''}</span></div><div class="word-phonetic">${wd.p}</div><div class="word-cn">${wd.m}</div><div class="word-example">${escapeHtml(wd.e)}<button class="speak-btn" data-speak="${escapeHtml(wd.e)}" onclick="event.stopPropagation();speakText(this)" ontouchend="event.stopPropagation();event.preventDefault();speakText(this)">🔊</button></div><div class="word-example-zh">${escapeHtml(wd.ez)}</div></div>`;
   });
   wordHtml+=`</div>`;
-  if(wordRec){
-    wordHtml+=`<div class="checkin-result">今日已掌握 <b>${wordRec.known?wordRec.known.length:0}</b> / 8 个单词 ✓</div>`;
-  }else{
-    wordHtml+=`<div class="checkin-tip">👆 点击单词标记"已掌握",全部掌握后自动打卡</div>`;
-  }
-  if(!wordRec){
-    wordHtml+=`<div style="margin-top:8px;text-align:right"><button class="btn checkin-btn" onclick="doWordCheckin()">完成打卡</button></div>`;
+  wordHtml+=`<div class="checkin-result">今日已掌握 <b>${knownCount}</b> / 8 个单词 ${knownCount>=8?'✓':''}</div>`;
+  if(knownCount<8){
+    wordHtml+=`<div class="checkin-tip">👆 点击单词标记"已掌握"</div>`;
   }
   wordHtml+=`</div>`;
 
@@ -709,14 +707,16 @@ function renderEnglishCheckin(){
   `;
 }
 
-// 点击单词标记掌握
-document.addEventListener('click',e=>{
-  const wi=e.target.closest('[data-word-idx]');
-  if(wi&&!state.wordCheckin[todayKey()]){
-    const idx=parseInt(wi.dataset.wordIdx);
-    wi.classList.toggle('known');
-  }
-});
+// 点击单词标记掌握(单独保存)
+function toggleWord(idx){
+  const tk=todayKey();
+  if(!state.wordCheckin[tk])state.wordCheckin[tk]={known:[],ts:Date.now()};
+  const known=state.wordCheckin[tk].known;
+  const pos=known.indexOf(idx);
+  if(pos>=0)known.splice(pos,1);else known.push(idx);
+  state.wordCheckin[tk].ts=Date.now();
+  saveState();renderPlan();
+}
 
 // 朗读单词/句子
 function speak(text){
@@ -738,10 +738,7 @@ function speakText(el){
 
 function doWordCheckin(){
   const tk=todayKey();
-  // 收集已标记掌握的单词
-  const known=[];
-  document.querySelectorAll('.word-item.known').forEach(el=>known.push(parseInt(el.dataset.wordIdx)));
-  state.wordCheckin[tk]={known,ts:Date.now()};
+  if(!state.wordCheckin[tk])state.wordCheckin[tk]={known:[],ts:Date.now()};
   saveState();renderPlan();
 }
 function doSceneCheckin(){
