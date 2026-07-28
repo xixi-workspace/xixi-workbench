@@ -115,25 +115,27 @@
   .review-item .r-meta{font-size:10px;color:var(--muted)}
 
   /* 打卡详情弹窗 */
-  .day-detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:flex-end;justify-content:center}
-  .day-detail-panel{background:var(--panel);border-radius:16px 16px 0 0;width:100%;max-width:500px;max-height:calc(100vh - 60px);overflow-y:auto;overflow-x:hidden;padding:20px 20px 30px;animation:slideUp .25s;-webkit-overflow-scrolling:touch}
+  .day-detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+  .day-detail-panel{background:var(--panel);border-radius:16px 16px 0 0;width:100%;max-width:500px;max-height:78vh;display:flex;flex-direction:column;animation:slideUp .25s}
   @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-  body.noscroll{overflow:hidden}
-  .day-detail-panel h3{font-size:16px;margin:0 0 4px;color:var(--text)}
-  .day-detail-panel .dd-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
-  .dd-section{margin-bottom:14px}
-  .dd-section .dd-label{font-size:12px;color:var(--muted);margin-bottom:4px}
-  .dd-section .dd-value{font-size:14px;color:var(--text)}
-  .dd-words{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
-  .dd-word-tag{font-size:11px;padding:3px 8px;border-radius:6px;background:var(--green)22;color:var(--green)}
-  .dd-actions{display:flex;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)}
-  .dd-actions button{flex:1;padding:10px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
+  .dd-header{flex-shrink:0;padding:16px 20px 8px}
+  .dd-header h3{margin:0;font-size:16px;color:var(--text)}
+  .dd-header .dd-sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .dd-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 20px;-webkit-overflow-scrolling:touch}
+  .dd-footer{flex-shrink:0;padding:12px 20px 24px;border-top:1px solid var(--border);display:flex;gap:8px}
+  .dd-footer button{flex:1;padding:12px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
   .dd-btn-close{background:var(--panel2);color:var(--text)}
   .dd-btn-supplement{background:var(--accent);color:#fff}
   .dd-btn-cancel{background:#e26b6b22;color:#e26b6b}
-  .dd-words-list{margin-top:4px}
-  .dd-word-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer}
-  .dd-word-row.dd-known{background:var(--green)08;border-radius:8px;padding:8px 6px}
+  body.noscroll{overflow:hidden}
+  .day-detail-panel h3{font-size:16px;margin:0 0 4px;color:var(--text)}
+  .day-detail-panel .dd-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+  .dd-section{margin-bottom:12px}
+  .dd-section .dd-label{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .dd-section .dd-value{font-size:14px;color:var(--text)}
+  .dd-words-list{margin-top:0}
+  .dd-word-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer}
+  .dd-word-row.dd-known{background:var(--green)08;border-radius:8px;padding:10px 6px}
   .dd-w-check{font-size:18px;flex-shrink:0;margin-top:2px}
   .dd-w-info{flex:1;min-width:0}
   .dd-w-en{font-size:14px;font-weight:600;color:var(--text)}
@@ -1004,19 +1006,23 @@ function showDayDetail(dateKey){
   overlay.onclick=function(e){if(e.target===overlay)closeDetail()}
   overlay.innerHTML=`
     <div class="day-detail-panel">
-      <h3>📅 ${dateLabel}</h3>
-      <div class="dd-sub">${isToday?'今天':'历史记录'} · 单词 ${knownCount}/8 · 场景${sc?'已打卡':'未打卡'}</div>
-      <div class="dd-section">
-        <div class="dd-label">📖 单词打卡（${knownCount}/8）</div>
-        <div class="dd-words-list">${wordsHtml}</div>
-        ${knownCount<8?`<div style="margin-top:6px"><button class="btn" style="background:var(--green);color:#fff;font-size:12px;padding:6px 14px" onclick="markAllWords('${dateKey}')" ontouchend="event.preventDefault();markAllWords('${dateKey}')">全部标记已掌握</button></div>`:''}
+      <div class="dd-header">
+        <h3>📅 ${dateLabel}</h3>
+        <div class="dd-sub">${isToday?'今天':'历史记录'} · 单词 ${knownCount}/8 · 场景${sc?'已打卡':'未打卡'}</div>
       </div>
-      <div class="dd-section">
-        <div class="dd-label">🎭 场景英语</div>
-        <div class="dd-value">${sceneDetail}</div>
-        ${!sc?`<div style="margin-top:4px"><button class="btn" style="background:var(--accent);color:#fff;font-size:12px;padding:6px 14px" onclick="supplementScene('${dateKey}')" ontouchend="event.preventDefault();supplementScene('${dateKey}')">补场景打卡</button></div>`:''}
+      <div class="dd-body">
+        <div class="dd-section">
+          <div class="dd-label">📖 单词打卡（${knownCount}/8）</div>
+          <div class="dd-words-list">${wordsHtml}</div>
+          ${knownCount<8?`<div style="margin-top:8px;text-align:center"><button class="btn" style="background:var(--green);color:#fff;font-size:12px;padding:6px 14px;border:none;border-radius:8px" onclick="markAllWords('${dateKey}')" ontouchend="event.preventDefault();markAllWords('${dateKey}')">全部标记已掌握</button></div>`:''}
+        </div>
+        <div class="dd-section">
+          <div class="dd-label">🎭 场景英语</div>
+          <div class="dd-value">${sceneDetail}</div>
+          ${!sc?`<div style="margin-top:6px"><button class="btn" style="background:var(--accent);color:#fff;font-size:12px;padding:6px 14px;border:none;border-radius:8px" onclick="supplementScene('${dateKey}')" ontouchend="event.preventDefault();supplementScene('${dateKey}')">补场景打卡</button></div>`:''}
+        </div>
       </div>
-      <div class="dd-actions">
+      <div class="dd-footer">
         <button class="dd-btn-close" onclick="closeDetail()">关闭</button>
         ${wc||sc?`<button class="dd-btn-cancel" onclick="cancelDayCheckin('${dateKey}')">清除全部</button>`:`<button class="dd-btn-supplement" onclick="supplementDay('${dateKey}')">一键补卡</button>`}
       </div>
