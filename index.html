@@ -130,6 +130,15 @@
   .dd-btn-close{background:var(--panel2);color:var(--text)}
   .dd-btn-supplement{background:var(--accent);color:#fff}
   .dd-btn-cancel{background:#e26b6b22;color:#e26b6b}
+  .dd-words-list{margin-top:4px}
+  .dd-word-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer}
+  .dd-word-row.dd-known{background:var(--green)08;border-radius:8px;padding:8px 6px}
+  .dd-w-check{font-size:18px;flex-shrink:0;margin-top:2px}
+  .dd-w-info{flex:1;min-width:0}
+  .dd-w-en{font-size:14px;font-weight:600;color:var(--text)}
+  .dd-w-ph{font-size:11px;font-weight:400;color:var(--muted);margin-left:6px}
+  .dd-w-cn{font-size:12px;color:var(--muted)}
+  .dd-w-eg{font-size:11px;color:var(--text);opacity:.7;margin-top:2px;line-height:1.4}
   .calendar-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px}
   .calendar-header{display:flex;align-items:center;justify-content:space-between;padding:4px 4px 12px}
   .calendar-header h2{font-size:15px;font-weight:600}
@@ -623,9 +632,9 @@ function getTodayWords(dateStr){
   for(let i=0;i<8;i++){result.push(WORD_BANK[(start+i)%WORD_BANK.length])}
   return result;
 }
-function getTodayScene(){
-  const tk=todayKey();
-  const seed=dateSeed(tk);
+function getTodayScene(dateStr){
+  const d=dateStr||todayKey();
+  const seed=dateSeed(d);
   return SCENE_BANK[seed%SCENE_BANK.length];
 }
 
@@ -964,20 +973,29 @@ function showDayDetail(dateKey){
   const weekNames=['周日','周一','周二','周三','周四','周五','周六'];
   const dateLabel=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 ${weekNames[d.getDay()]}`;
   const isToday=(dateKey===tk);
-
-  // 单词掌握详情
-  let wordDetail='无记录';
-  if(wc&&wc.known){
-    const words=getTodayWords(dateKey);
-    wordDetail=wc.known.map(i=>words[i]?words[i].w:'?').join('、');
-    if(wordDetail==='')wordDetail='无记录';
-  }
+  const words=getTodayWords(dateKey);
+  const knownIdx=wc&&wc.known?wc.known:[];
 
   // 场景英语
-  let sceneDetail='无记录';
+  let sceneDetail='未打卡';
   if(sc){
-    sceneDetail=`${sc.sceneName||sc.scene} · ${sc.minutes||0}分钟`;
+    sceneDetail=`${sc.sceneName||sc.scene} · ${sc.minutes||0}分钟 ✓`;
   }
+
+  // 单词列表(8个全显示,掌握的打勾)
+  let wordsHtml=words.map((wd,i)=>{
+    const known=knownIdx.includes(i);
+    return `<div class="dd-word-row ${known?'dd-known':''}" data-dk="${dateKey}" data-wi="${i}" role="button" onclick="toggleDetailWord('${dateKey}',${i})" ontouchend="event.preventDefault();toggleDetailWord('${dateKey}',${i})">
+      <span class="dd-w-check">${known?'✅':'⬜'}</span>
+      <div class="dd-w-info">
+        <div class="dd-w-en">${wd.w} <span class="dd-w-ph">${wd.p}</span></div>
+        <div class="dd-w-cn">${wd.m}</div>
+        <div class="dd-w-eg">${escapeHtml(wd.e)}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const knownCount=knownIdx.length;
 
   // 构建详情 HTML
   const overlay=document.createElement('div');
@@ -986,25 +1004,56 @@ function showDayDetail(dateKey){
   overlay.innerHTML=`
     <div class="day-detail-panel">
       <h3>📅 ${dateLabel}</h3>
-      <div class="dd-sub">${isToday?'今天':'历史记录'} · ${wc||sc?'有打卡':'无打卡'}</div>
+      <div class="dd-sub">${isToday?'今天':'历史记录'} · 单词 ${knownCount}/8 · 场景${sc?'已打卡':'未打卡'}</div>
       <div class="dd-section">
-        <div class="dd-label">📖 单词打卡</div>
-        <div class="dd-value">${wc&&wc.known?`已掌握 ${wc.known.length}/8 个`:'未打卡'}</div>
-        ${wc&&wc.known?`<div class="dd-words">${wc.known.map(i=>{const wds=getTodayWords(dateKey);return `<span class="dd-word-tag">${wds[i]?wds[i].w:'?'}</span>`}).join('')}</div>`:''}
+        <div class="dd-label">📖 单词打卡（${knownCount}/8）</div>
+        <div class="dd-words-list">${wordsHtml}</div>
+        ${knownCount<8?`<div style="margin-top:6px"><button class="btn" style="background:var(--green);color:#fff;font-size:12px;padding:6px 14px" onclick="markAllWords('${dateKey}')" ontouchend="event.preventDefault();markAllWords('${dateKey}')">全部标记已掌握</button></div>`:''}
       </div>
       <div class="dd-section">
         <div class="dd-label">🎭 场景英语</div>
         <div class="dd-value">${sceneDetail}</div>
+        ${!sc?`<div style="margin-top:4px"><button class="btn" style="background:var(--accent);color:#fff;font-size:12px;padding:6px 14px" onclick="supplementScene('${dateKey}')" ontouchend="event.preventDefault();supplementScene('${dateKey}')">补场景打卡</button></div>`:''}
       </div>
       <div class="dd-actions">
         <button class="dd-btn-close" onclick="this.closest('.day-detail-overlay').remove()">关闭</button>
-        ${!isToday?`
-          ${wc||sc?`<button class="dd-btn-cancel" onclick="cancelDayCheckin('${dateKey}')">清除打卡</button>`:`<button class="dd-btn-supplement" onclick="supplementDay('${dateKey}')">补打卡</button>`}
-        `:`<button class="dd-btn-supplement" disabled style="opacity:.4">今天请去每日计划打卡</button>`}
+        ${wc||sc?`<button class="dd-btn-cancel" onclick="cancelDayCheckin('${dateKey}')">清除全部</button>`:`<button class="dd-btn-supplement" onclick="supplementDay('${dateKey}')">一键补卡</button>`}
       </div>
     </div>
   `;
   document.body.appendChild(overlay);
+}
+
+// 详情弹窗中切换单个单词
+function toggleDetailWord(dateKey,idx){
+  if(!state.wordCheckin[dateKey])state.wordCheckin[dateKey]={known:[],ts:Date.now()};
+  const known=state.wordCheckin[dateKey].known;
+  const pos=known.indexOf(idx);
+  if(pos>=0)known.splice(pos,1);else known.push(idx);
+  state.wordCheckin[dateKey].ts=Date.now();
+  saveState();
+  // 刷新弹窗
+  document.querySelector('.day-detail-overlay')?.remove();
+  showDayDetail(dateKey);
+}
+
+// 全部标记已掌握
+function markAllWords(dateKey){
+  if(!state.wordCheckin[dateKey])state.wordCheckin[dateKey]={known:[],ts:Date.now()};
+  state.wordCheckin[dateKey].known=[0,1,2,3,4,5,6,7];
+  state.wordCheckin[dateKey].ts=Date.now();
+  saveState();
+  document.querySelector('.day-detail-overlay')?.remove();
+  showDayDetail(dateKey);
+}
+
+// 单独补场景打卡
+function supplementScene(dateKey){
+  const sc=getTodayScene(dateKey);
+  state.sceneCheckin[dateKey]={scene:sc.name,sceneName:sc.name,minutes:15,ts:Date.now()};
+  saveState();
+  document.querySelector('.day-detail-overlay')?.remove();
+  showDayDetail(dateKey);
 }
 
 function supplementDay(dateKey){
