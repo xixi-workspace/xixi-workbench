@@ -748,7 +748,13 @@ function toggleWord(idx){
   if(!state.wordCheckin[tk])state.wordCheckin[tk]={known:[],ts:Date.now()};
   const known=state.wordCheckin[tk].known;
   const pos=known.indexOf(idx);
-  if(pos>=0)known.splice(pos,1);else known.push(idx);
+  if(pos>=0){
+    if(!confirm('取消掌握这个单词?'))return;
+    known.splice(pos,1);
+  }else{
+    if(!confirm('标记为已掌握?'))return;
+    known.push(idx);
+  }
   state.wordCheckin[tk].ts=Date.now();
   saveState();renderPlan();
 }
@@ -1026,7 +1032,13 @@ function toggleDetailWord(dateKey,idx){
   if(!state.wordCheckin[dateKey])state.wordCheckin[dateKey]={known:[],ts:Date.now()};
   const known=state.wordCheckin[dateKey].known;
   const pos=known.indexOf(idx);
-  if(pos>=0)known.splice(pos,1);else known.push(idx);
+  if(pos>=0){
+    if(!confirm('取消掌握这个单词?'))return;
+    known.splice(pos,1);
+  }else{
+    if(!confirm('标记为已掌握?'))return;
+    known.push(idx);
+  }
   state.wordCheckin[dateKey].ts=Date.now();
   saveState();renderMonthly();
 }
