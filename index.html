@@ -142,6 +142,10 @@
   .dd-w-ph{font-size:11px;font-weight:400;color:var(--muted);margin-left:6px}
   .dd-w-cn{font-size:12px;color:var(--muted)}
   .dd-w-eg{font-size:11px;color:var(--text);opacity:.7;margin-top:2px;line-height:1.4}
+  /* 单词勾选框按钮 */
+  .word-check-btn{flex-shrink:0;width:30px;height:30px;border-radius:50%;border:2px solid var(--border);background:transparent;color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:4px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+  .word-check-btn:active{transform:scale(.9)}
+  .word-check-btn.checked{background:var(--green);border-color:var(--green);color:#fff}
   .calendar-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px}
   .calendar-header{display:flex;align-items:center;justify-content:space-between;padding:4px 4px 12px}
   .calendar-header h2{font-size:15px;font-weight:600}
@@ -676,7 +680,7 @@ function renderEnglishCheckin(){
       <div class="word-list">`;
   todayWords.forEach((wd,i)=>{
     const known=wordRec&&wordRec.known&&wordRec.known.includes(i);
-    wordHtml+=`<div class="word-item ${known?'known':''}" data-word-idx="${i}" role="button" onclick="toggleWord(${i})" ontouchend="event.preventDefault();toggleWord(${i})"><div class="word-en">${wd.w}<button class="speak-btn" data-speak="${wd.w}" onclick="event.stopPropagation();speakText(this)" ontouchend="event.stopPropagation();event.preventDefault();speakText(this)">🔊</button><span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:auto">${known?'✓ 已掌握':''}</span></div><div class="word-phonetic">${wd.p}</div><div class="word-cn">${wd.m}</div><div class="word-example">${escapeHtml(wd.e)}<button class="speak-btn" data-speak="${escapeHtml(wd.e)}" onclick="event.stopPropagation();speakText(this)" ontouchend="event.stopPropagation();event.preventDefault();speakText(this)">🔊</button></div><div class="word-example-zh">${escapeHtml(wd.ez)}</div></div>`;
+    wordHtml+=`<div class="word-item ${known?'known':''}"><div class="word-en">${wd.w}<button class="speak-btn" data-speak="${wd.w}" onclick="event.stopPropagation();speakText(this)" ontouchend="event.stopPropagation();event.preventDefault();speakText(this)">🔊</button><button class="word-check-btn ${known?'checked':''}" role="button" onclick="toggleWord(${i})" ontouchend="event.preventDefault();toggleWord(${i})">${known?'✓':'○'}</button></div><div class="word-phonetic">${wd.p}</div><div class="word-cn">${wd.m}</div><div class="word-example">${escapeHtml(wd.e)}<button class="speak-btn" data-speak="${escapeHtml(wd.e)}" onclick="event.stopPropagation();speakText(this)" ontouchend="event.stopPropagation();event.preventDefault();speakText(this)">🔊</button></div><div class="word-example-zh">${escapeHtml(wd.ez)}</div></div>`;
   });
   wordHtml+=`</div>`;
   wordHtml+=`<div class="checkin-result">今日已掌握 <b>${knownCount}</b> / 8 个单词 ${knownCount>=8?'✓':''}</div>`;
@@ -748,13 +752,7 @@ function toggleWord(idx){
   if(!state.wordCheckin[tk])state.wordCheckin[tk]={known:[],ts:Date.now()};
   const known=state.wordCheckin[tk].known;
   const pos=known.indexOf(idx);
-  if(pos>=0){
-    if(!confirm('取消掌握这个单词?'))return;
-    known.splice(pos,1);
-  }else{
-    if(!confirm('标记为已掌握?'))return;
-    known.push(idx);
-  }
+  if(pos>=0)known.splice(pos,1);else known.push(idx);
   state.wordCheckin[tk].ts=Date.now();
   saveState();renderPlan();
 }
@@ -985,8 +983,8 @@ function renderDayDetail(dateKey){
 
   let wordsHtml=words.map((wd,i)=>{
     const known=knownIdx.includes(i);
-    return `<div class="dd-word-row ${known?'dd-known':''}" data-dk="${dateKey}" data-wi="${i}" role="button" onclick="toggleDetailWord('${dateKey}',${i})" ontouchend="event.preventDefault();toggleDetailWord('${dateKey}',${i})">
-      <span class="dd-w-check">${known?'✅':'⬜'}</span>
+    return `<div class="dd-word-row ${known?'dd-known':''}">
+      <button class="word-check-btn ${known?'checked':''}" role="button" onclick="toggleDetailWord('${dateKey}',${i})" ontouchend="event.preventDefault();toggleDetailWord('${dateKey}',${i})">${known?'✓':'○'}</button>
       <div class="dd-w-info">
         <div class="dd-w-en">${wd.w} <span class="dd-w-ph">${wd.p}</span></div>
         <div class="dd-w-cn">${wd.m}</div>
@@ -1032,13 +1030,7 @@ function toggleDetailWord(dateKey,idx){
   if(!state.wordCheckin[dateKey])state.wordCheckin[dateKey]={known:[],ts:Date.now()};
   const known=state.wordCheckin[dateKey].known;
   const pos=known.indexOf(idx);
-  if(pos>=0){
-    if(!confirm('取消掌握这个单词?'))return;
-    known.splice(pos,1);
-  }else{
-    if(!confirm('标记为已掌握?'))return;
-    known.push(idx);
-  }
+  if(pos>=0)known.splice(pos,1);else known.push(idx);
   state.wordCheckin[dateKey].ts=Date.now();
   saveState();renderMonthly();
 }
