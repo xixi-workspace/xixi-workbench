@@ -20,7 +20,7 @@
     --green:#5fbf6a;--red:#e26b6b;--blue:#5b9bf5;--purple:#b07cf5;--orange:#f5a65b;
     --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
   }
-  html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none;overscroll-behavior:none}
+  html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;-webkit-user-select:none;user-select:none}
   input,textarea{-webkit-user-select:text;user-select:text}
   .app{display:flex;flex-direction:column;height:100vh;height:100dvh;padding-top:var(--safe-top);padding-bottom:var(--safe-bottom)}
 
@@ -121,7 +121,7 @@
   .dd-header{flex-shrink:0;padding:16px 20px 8px}
   .dd-header h3{margin:0;font-size:16px;color:var(--text)}
   .dd-header .dd-sub{font-size:12px;color:var(--muted);margin-top:2px}
-  .dd-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 20px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+  .dd-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 20px;-webkit-overflow-scrolling:touch}
   .dd-footer{flex-shrink:0;padding:12px 20px 24px;border-top:1px solid var(--border);display:flex;gap:8px}
   .dd-footer button{flex:1;padding:12px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
   .dd-btn-close{background:var(--panel2);color:var(--text)}
@@ -1035,12 +1035,27 @@ function showDayDetail(dateKey){
   document.body.classList.add('noscroll');
   document.body.appendChild(overlay);
 
-  // 阻止body背景滚动(在overlay上所有touchmove阻止默认行为,panel内部通过dd-body自行处理)
+  // 彻底阻止背景滚动:iOS上overscroll-behavior不可靠,用JS拦截
+  const ddBody=overlay.querySelector('.dd-body');
+  let startY=0;
+  // 阻止overlay非dd-body区域的touchmove
   overlay.addEventListener('touchmove',function(e){
-    const panel=e.target.closest('.day-detail-panel');
-    const body=e.target.closest('.dd-body');
-    if(!panel||!body)e.preventDefault();
+    if(!ddBody.contains(e.target)){e.preventDefault();return;}
   },{passive:false});
+  // dd-body内部:处理边界滚动
+  if(ddBody){
+    ddBody.addEventListener('touchstart',function(e){startY=e.touches[0].clientY},{passive:true});
+    ddBody.addEventListener('touchmove',function(e){
+      const st=ddBody.scrollTop;
+      const sh=ddBody.scrollHeight;
+      const ch=ddBody.clientHeight;
+      const dy=e.touches[0].clientY-startY;
+      // 到顶部还往下拉,或到底部还往上推,阻止
+      if((st<=0&&dy>0)||(st+ch>=sh-1&&dy<0)){
+        e.preventDefault();
+      }
+    },{passive:false});
+  }
 }
 function toggleDetailWord(dateKey,idx){
   if(!state.wordCheckin[dateKey])state.wordCheckin[dateKey]={known:[],ts:Date.now()};
