@@ -121,7 +121,7 @@
   .dd-header{flex-shrink:0;padding:16px 20px 8px}
   .dd-header h3{margin:0;font-size:16px;color:var(--text)}
   .dd-header .dd-sub{font-size:12px;color:var(--muted);margin-top:2px}
-  .dd-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 20px;-webkit-overflow-scrolling:touch}
+  .dd-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 20px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
   .dd-footer{flex-shrink:0;padding:12px 20px 24px;border-top:1px solid var(--border);display:flex;gap:8px}
   .dd-footer button{flex:1;padding:12px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
   .dd-btn-close{background:var(--panel2);color:var(--text)}
@@ -1003,7 +1003,11 @@ function showDayDetail(dateKey){
   // 构建详情 HTML
   const overlay=document.createElement('div');
   overlay.className='day-detail-overlay';
-  overlay.onclick=function(e){if(e.target===overlay)closeDetail()}
+  overlay.id='dayDetailOverlay';
+  // 点击overlay灰色背景关闭(不包含panel)
+  overlay.addEventListener('click',function(e){
+    if(e.target===overlay)closeDetail();
+  });
   overlay.innerHTML=`
     <div class="day-detail-panel">
       <div class="dd-header">
@@ -1030,6 +1034,13 @@ function showDayDetail(dateKey){
   `;
   document.body.classList.add('noscroll');
   document.body.appendChild(overlay);
+
+  // 阻止body背景滚动(在overlay上所有touchmove阻止默认行为,panel内部通过dd-body自行处理)
+  overlay.addEventListener('touchmove',function(e){
+    const panel=e.target.closest('.day-detail-panel');
+    const body=e.target.closest('.dd-body');
+    if(!panel||!body)e.preventDefault();
+  },{passive:false});
 }
 function toggleDetailWord(dateKey,idx){
   if(!state.wordCheckin[dateKey])state.wordCheckin[dateKey]={known:[],ts:Date.now()};
