@@ -115,9 +115,10 @@
   .review-item .r-meta{font-size:10px;color:var(--muted)}
 
   /* 打卡详情弹窗 */
-  .day-detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:flex-end;justify-content:center;touch-action:none}
-  .day-detail-panel{background:var(--panel);border-radius:16px 16px 0 0;width:100%;max-width:500px;max-height:85vh;overflow-y:auto;overflow-x:hidden;padding:20px 20px 30px;animation:slideUp .25s;-webkit-overflow-scrolling:touch;touch-action:auto}
+  .day-detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+  .day-detail-panel{background:var(--panel);border-radius:16px 16px 0 0;width:100%;max-width:500px;max-height:calc(100vh - 60px);overflow-y:auto;overflow-x:hidden;padding:20px 20px 30px;animation:slideUp .25s;-webkit-overflow-scrolling:touch}
   @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  body.noscroll{overflow:hidden}
   .day-detail-panel h3{font-size:16px;margin:0 0 4px;color:var(--text)}
   .day-detail-panel .dd-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
   .dd-section{margin-bottom:14px}
@@ -1021,14 +1022,8 @@ function showDayDetail(dateKey){
       </div>
     </div>
   `;
+  document.body.classList.add('noscroll');
   document.body.appendChild(overlay);
-
-  // 阻止背景滚动(overlay上非panel区域prevent)
-  overlay.addEventListener('touchmove',function(e){
-    if(!e.target.closest('.day-detail-panel')){
-      e.preventDefault();
-    }
-  },{passive:false});
 }
 function toggleDetailWord(dateKey,idx){
   if(!state.wordCheckin[dateKey])state.wordCheckin[dateKey]={known:[],ts:Date.now()};
@@ -1064,6 +1059,7 @@ function supplementScene(dateKey){
 // 关闭详情弹窗并恢复滚动
 function closeDetail(){
   document.querySelector('.day-detail-overlay')?.remove();
+  document.body.classList.remove('noscroll');
 }
 
 function supplementDay(dateKey){
