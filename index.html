@@ -169,6 +169,14 @@
   .cal-day.lv5{background:#b07cf5}
   .cal-day.lv5 .d-num{color:#1a1a1d}
   .cal-day.lv5 .d-dot{background:#fff}
+  .cal-day.selected{outline:2px solid var(--accent);outline-offset:-1px}
+  /* 行内详情面板 */
+  .dd-inline-panel{margin:12px 0;background:var(--panel2);border-radius:12px;overflow:hidden}
+  .dd-inline-header{padding:14px 16px 8px}
+  .dd-inline-header h3{margin:0;font-size:15px;color:var(--text)}
+  .dd-inline-sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .dd-inline-body{padding:0 16px}
+  .dd-inline-footer{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px}
   .cal-legend{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:10px;font-size:10px;color:var(--muted)}
   .cal-legend-box{display:flex;gap:3px;align-items:center}
   .cal-legend span{width:10px;height:10px;border-radius:3px;display:block}
@@ -862,47 +870,34 @@ function addReview(){
 }
 
 // ===== 每月复盘(打卡日历) =====
-let calYear,calMonth;
+let calYear,calMonth,selectedDate=null;
 function renderMonthly(){
   const c=document.getElementById('content');
   const today=new Date();
   if(calYear===undefined){calYear=today.getFullYear();calMonth=today.getMonth()}
-  // 合并所有打卡日期,计算每天的打卡等级(0-5)
   const dayLevel={};
-  // 单词打卡:+2
-  Object.keys(state.wordCheckin).forEach(d=>{
-    dayLevel[d]=(dayLevel[d]||0)+2;
-  });
-  // 场景打卡:+1
-  Object.keys(state.sceneCheckin).forEach(d=>{
-    dayLevel[d]=(dayLevel[d]||0)+1;
-  });
-  // 运动+自定义任务完成的日期(用任务done状态无法关联日期,跳过;用打卡为准)
-  // 等级封顶5
+  Object.keys(state.wordCheckin).forEach(d=>{dayLevel[d]=(dayLevel[d]||0)+2});
+  Object.keys(state.sceneCheckin).forEach(d=>{dayLevel[d]=(dayLevel[d]||0)+1});
   Object.keys(dayLevel).forEach(d=>{dayLevel[d]=Math.min(5,dayLevel[d])});
 
-  // 日历
   const firstDay=new Date(calYear,calMonth,1);
   const lastDay=new Date(calYear,calMonth+1,0);
   const daysInMonth=lastDay.getDate();
-  // 周一=0 ... 周日=6
   let firstWeekday=firstDay.getDay()-1;
   if(firstWeekday<0)firstWeekday=6;
   const tk=todayKey();
   const monthNames=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 
   let daysHtml='';
-  // 前置空位
   for(let i=0;i<firstWeekday;i++){daysHtml+='<div class="cal-day other"></div>'}
-  // 日期格
   for(let d=1;d<=daysInMonth;d++){
     const dKey=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const lv=dayLevel[dKey]||0;
     const isToday=(dKey===tk);
-    daysHtml+=`<div class="cal-day lv${lv} ${isToday?'today':''}" data-date="${dKey}" role="button" onclick="showDayDetail('${dKey}')" ontouchend="event.preventDefault();showDayDetail('${dKey}')"><div class="d-num">${d}</div><div class="d-dot"></div></div>`;
+    const isSel=(dKey===selectedDate);
+    daysHtml+=`<div class="cal-day lv${lv} ${isToday?'today':''} ${isSel?'selected':''}" data-date="${dKey}" role="button" onclick="selectDay('${dKey}')" ontouchend="event.preventDefault();selectDay('${dKey}')"><div class="d-num">${d}</div><div class="d-dot"></div></div>`;
   }
 
-  // 本月打卡统计
   let monthDays=0,monthFull=0;
   Object.keys(dayLevel).forEach(d=>{
     if(d.startsWith(`${calYear}-${String(calMonth+1).padStart(2,'0')}`)){
@@ -911,7 +906,6 @@ function renderMonthly(){
     }
   });
 
-  // 月份复盘文字
   const monthKey=`${calYear}-${String(calMonth+1).padStart(2,'0')}`;
   if(!state.monthlyReview)state.monthlyReview={};
   const reviewText=state.monthlyReview[monthKey]||'';
@@ -946,29 +940,31 @@ function renderMonthly(){
         <span>多</span>
       </div>
     </div>
+    <div id="dayDetailArea"></div>
     <div class="month-detail">
       <h3>📝 ${calYear}年${monthNames[calMonth]}月总结</h3>
       <textarea id="monthReviewInput" placeholder="这个月做得好的地方、需要改进的地方、下月计划...">${escapeHtml(reviewText)}</textarea>
       <div class="save-row">
-        <span>点击日期格可手动标记/取消打卡</span>
+        <span>点击日期查看打卡详情</span>
         <button onclick="saveMonthReview('${monthKey}')" ontouchend="event.preventDefault();saveMonthReview('${monthKey}')">保存</button>
       </div>
     </div>
     <div style="font-size:12px;color:var(--muted);padding:12px 4px;line-height:1.6">
-      💡 打卡等级说明:单词打卡+2,场景英语+1,满级5。<br>
-      颜色越深表示当日打卡越完整。点击任意日期可手动补卡或取消。
+      💡 颜色越深表示当日打卡越完整。点击日期查看详情并补打卡。
     </div>
   `;
+  // 如果有选中日期,渲染详情
+  if(selectedDate)renderDayDetail(selectedDate);
 }
 
-function changeMonth(delta){
-  calMonth+=delta;
-  if(calMonth<0){calMonth=11;calYear--}
-  if(calMonth>11){calMonth=0;calYear++}
+function selectDay(dateKey){
+  if(selectedDate===dateKey){selectedDate=null;}else{selectedDate=dateKey;}
   renderMonthly();
 }
 
-function showDayDetail(dateKey){
+function renderDayDetail(dateKey){
+  const area=document.getElementById('dayDetailArea');
+  if(!area)return;
   const tk=todayKey();
   const wc=state.wordCheckin[dateKey];
   const sc=state.sceneCheckin[dateKey];
@@ -978,14 +974,9 @@ function showDayDetail(dateKey){
   const isToday=(dateKey===tk);
   const words=getTodayWords(dateKey);
   const knownIdx=wc&&wc.known?wc.known:[];
+  const knownCount=knownIdx.length;
+  const sceneDetail=sc?`${sc.sceneName||sc.scene} · ${sc.minutes||0}分钟 ✓`:'未打卡';
 
-  // 场景英语
-  let sceneDetail='未打卡';
-  if(sc){
-    sceneDetail=`${sc.sceneName||sc.scene} · ${sc.minutes||0}分钟 ✓`;
-  }
-
-  // 单词列表(8个全显示,掌握的打勾)
   let wordsHtml=words.map((wd,i)=>{
     const known=knownIdx.includes(i);
     return `<div class="dd-word-row ${known?'dd-known':''}" data-dk="${dateKey}" data-wi="${i}" role="button" onclick="toggleDetailWord('${dateKey}',${i})" ontouchend="event.preventDefault();toggleDetailWord('${dateKey}',${i})">
@@ -998,23 +989,13 @@ function showDayDetail(dateKey){
     </div>`;
   }).join('');
 
-  const knownCount=knownIdx.length;
-
-  // 构建详情 HTML
-  const overlay=document.createElement('div');
-  overlay.className='day-detail-overlay';
-  overlay.id='dayDetailOverlay';
-  // 点击overlay灰色背景关闭(不包含panel)
-  overlay.addEventListener('click',function(e){
-    if(e.target===overlay)closeDetail();
-  });
-  overlay.innerHTML=`
-    <div class="day-detail-panel">
-      <div class="dd-header">
+  area.innerHTML=`
+    <div class="dd-inline-panel">
+      <div class="dd-inline-header">
         <h3>📅 ${dateLabel}</h3>
-        <div class="dd-sub">${isToday?'今天':'历史记录'} · 单词 ${knownCount}/8 · 场景${sc?'已打卡':'未打卡'}</div>
+        <div class="dd-inline-sub">${isToday?'今天':'历史记录'} · 单词 ${knownCount}/8 · 场景${sc?'已打卡':'未打卡'}</div>
       </div>
-      <div class="dd-body">
+      <div class="dd-inline-body">
         <div class="dd-section">
           <div class="dd-label">📖 单词打卡（${knownCount}/8）</div>
           <div class="dd-words-list">${wordsHtml}</div>
@@ -1026,98 +1007,53 @@ function showDayDetail(dateKey){
           ${!sc?`<div style="margin-top:6px"><button class="btn" style="background:var(--accent);color:#fff;font-size:12px;padding:6px 14px;border:none;border-radius:8px" onclick="supplementScene('${dateKey}')" ontouchend="event.preventDefault();supplementScene('${dateKey}')">补场景打卡</button></div>`:''}
         </div>
       </div>
-      <div class="dd-footer">
-        <button class="dd-btn-close" onclick="closeDetail()">关闭</button>
-        ${wc||sc?`<button class="dd-btn-cancel" onclick="cancelDayCheckin('${dateKey}')">清除全部</button>`:`<button class="dd-btn-supplement" onclick="supplementDay('${dateKey}')">一键补卡</button>`}
+      <div class="dd-inline-footer">
+        ${wc||sc?`<button class="btn" style="background:#e26b6b22;color:#e26b6b;border:none;border-radius:10px;padding:10px 16px;font-size:13px" onclick="cancelDayCheckin('${dateKey}')">清除全部</button>`:`<button class="btn" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13px" onclick="supplementDay('${dateKey}')">一键补卡</button>`}
       </div>
     </div>
   `;
-  document.body.classList.add('noscroll');
-  document.body.appendChild(overlay);
-
-  // 彻底阻止背景滚动:iOS上overscroll-behavior不可靠,用JS拦截
-  const ddBody=overlay.querySelector('.dd-body');
-  let startY=0;
-  // 阻止overlay非dd-body区域的touchmove
-  overlay.addEventListener('touchmove',function(e){
-    if(!ddBody.contains(e.target)){e.preventDefault();return;}
-  },{passive:false});
-  // dd-body内部:处理边界滚动
-  if(ddBody){
-    ddBody.addEventListener('touchstart',function(e){startY=e.touches[0].clientY},{passive:true});
-    ddBody.addEventListener('touchmove',function(e){
-      const st=ddBody.scrollTop;
-      const sh=ddBody.scrollHeight;
-      const ch=ddBody.clientHeight;
-      const dy=e.touches[0].clientY-startY;
-      // 到顶部还往下拉,或到底部还往上推,阻止
-      if((st<=0&&dy>0)||(st+ch>=sh-1&&dy<0)){
-        e.preventDefault();
-      }
-    },{passive:false});
-  }
 }
+
+function changeMonth(delta){
+  calMonth+=delta;
+  if(calMonth<0){calMonth=11;calYear--}
+  if(calMonth>11){calMonth=0;calYear++}
+  selectedDate=null;
+  renderMonthly();
+}
+
 function toggleDetailWord(dateKey,idx){
   if(!state.wordCheckin[dateKey])state.wordCheckin[dateKey]={known:[],ts:Date.now()};
   const known=state.wordCheckin[dateKey].known;
   const pos=known.indexOf(idx);
   if(pos>=0)known.splice(pos,1);else known.push(idx);
   state.wordCheckin[dateKey].ts=Date.now();
-  saveState();
-  // 刷新弹窗
-  closeDetail();
-  showDayDetail(dateKey);
+  saveState();renderMonthly();
 }
 
-// 全部标记已掌握
 function markAllWords(dateKey){
   if(!state.wordCheckin[dateKey])state.wordCheckin[dateKey]={known:[],ts:Date.now()};
   state.wordCheckin[dateKey].known=[0,1,2,3,4,5,6,7];
   state.wordCheckin[dateKey].ts=Date.now();
-  saveState();
-  closeDetail();
-  showDayDetail(dateKey);
+  saveState();renderMonthly();
 }
 
-// 单独补场景打卡
 function supplementScene(dateKey){
   const sc=getTodayScene(dateKey);
   state.sceneCheckin[dateKey]={scene:sc.name,sceneName:sc.name,minutes:15,ts:Date.now()};
-  saveState();
-  closeDetail();
-  showDayDetail(dateKey);
-}
-
-// 关闭详情弹窗并恢复滚动
-function closeDetail(){
-  document.querySelector('.day-detail-overlay')?.remove();
-  document.body.classList.remove('noscroll');
+  saveState();renderMonthly();
 }
 
 function supplementDay(dateKey){
   state.wordCheckin[dateKey]={known:[0,1,2,3,4,5,6,7],ts:Date.now()};
   state.sceneCheckin[dateKey]={scene:'补卡',sceneName:'补卡',minutes:15,ts:Date.now()};
-  saveState();
-  closeDetail();
-  renderMonthly();
+  saveState();renderMonthly();
 }
 
 function cancelDayCheckin(dateKey){
   delete state.wordCheckin[dateKey];
   delete state.sceneCheckin[dateKey];
-  saveState();
-  closeDetail();
-  renderMonthly();
-}
-
-// 兼容旧的 toggleDayCheckin
-function toggleDayCheckin(dateKey){
-  const tk=todayKey();
-  if(dateKey===tk){
-    alert('今天的打卡请在「每日计划」页面完成哦~');
-    return;
-  }
-  showDayDetail(dateKey);
+  saveState();renderMonthly();
 }
 
 function saveMonthReview(monthKey){
