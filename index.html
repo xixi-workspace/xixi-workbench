@@ -146,6 +146,13 @@
   .word-check-btn{flex-shrink:0;width:30px;height:30px;border-radius:50%;border:2px solid var(--border);background:transparent;color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:4px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
   .word-check-btn:active{transform:scale(.9)}
   .word-check-btn.checked{background:var(--green);border-color:var(--green);color:#fff}
+  /* 场景英语句子 */
+  .dd-scene-list{margin-top:4px}
+  .dd-scene-row{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+  .dd-scene-num{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--accent)22;color:var(--accent);font-size:12px;display:flex;align-items:center;justify-content:center;font-weight:600}
+  .dd-scene-content{flex:1;min-width:0}
+  .dd-scene-en{font-size:14px;color:var(--text);line-height:1.4}
+  .dd-scene-zh{font-size:12px;color:var(--muted);margin-top:2px}
   .calendar-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px}
   .calendar-header{display:flex;align-items:center;justify-content:space-between;padding:4px 4px 12px}
   .calendar-header h2{font-size:15px;font-weight:600}
@@ -570,6 +577,77 @@ const WORD_BANK=[
   {w:'willing',p:'/ˈwɪlɪŋ/',m:'adj.愿意的',e:"I'm willing to help if you need me.",ez:"如果你需要,我愿意帮忙。"},
   {w:'wonder',p:'/ˈwʌndər/',m:'v.想知道',e:"I wonder what time it is now.",ez:"我想知道现在几点了。"},
   {w:'worth',p:'/wɜːθ/',m:'adj.值得的',e:"This book is worth reading twice.",ez:"这本书值得读两遍。"},
+  {w:'adapt',p:'/əˈdæpt/',m:'v.适应',e:"It takes time to adapt to a new environment.",ez:"适应新环境需要时间。"},
+  {w:'appreciate',p:'/əˈpriːʃieɪt/',m:'v.感激,欣赏',e:"I really appreciate your help.",ez:"我真的很感激你的帮助。"},
+  {w:'argue',p:'/ˈɑːɡjuː/',m:'v.争论',e:"They argued about which movie to watch.",ez:"他们为看哪部电影争论。"},
+  {w:'assume',p:'/əˈsjuːm/',m:'v.假设',e:"Don't assume everyone thinks like you.",ez:"别假设每个人都和你想法一样。"},
+  {w:'attempt',p:'/əˈtempt/',m:'n./v.尝试',e:"This is my first attempt at baking.",ez:"这是我第一次尝试烘焙。"},
+  {w:'avoid',p:'/əˈvɔɪd/',m:'v.避免',e:"Try to avoid making the same mistake.",ez:"尽量避免犯同样的错误。"},
+  {w:'belong',p:'/bɪˈlɒŋ/',m:'v.属于',e:"Where does this book belong?",ez:"这本书应该放在哪?"},
+  {w:'bother',p:'/ˈbɒðər/',m:'v.打扰',e:"Sorry to bother you so late.",ez:"抱歉这么晚打扰你。"},
+  {w:'breathe',p:'/briːð/',m:'v.呼吸',e:"Take a deep breath and relax.",ez:"深呼吸,放松。"},
+  {w:'brief',p:'/briːf/',m:'adj.简短的',e:"Let me give you a brief introduction.",ez:"让我给你做个简短介绍。"},
+  {w:'broadcast',p:'/ˈbrɔːdkɑːst/',m:'n./v.广播',e:"The news was broadcast live.",ez:"新闻是现场直播的。"},
+  {w:'budget',p:'/ˈbʌdʒɪt/',m:'n.预算',e:"We need to stick to our budget.",ez:"我们需要控制预算。"},
+  {w:'cancel',p:'/ˈkænsl/',m:'v.取消',e:"I had to cancel my trip due to the weather.",ez:"由于天气我不得不取消行程。"},
+  {w:'cause',p:'/kɔːz/',m:'v.导致 n.原因',e:"What caused the accident?",ez:"什么导致了这场事故?"},
+  {w:'certain',p:'/ˈsɜːtn/',m:'adj.确定的',e:"I'm not certain about the answer.",ez:"我对答案不太确定。"},
+  {w:'claim',p:'/kleɪm/',m:'v.声称',e:"He claims to have seen a UFO.",ez:"他声称看到了UFO。"},
+  {w:'combine',p:'/kəmˈbaɪn/',m:'v.结合',e:"Combine all the ingredients in a bowl.",ez:"把所有食材在碗里混合。"},
+  {w:'commit',p:'/kəˈmɪt/',m:'v.承诺,投入',e:"You need to commit to the plan.",ez:"你需要对计划做出承诺。"},
+  {w:'compare',p:'/kəmˈpeər/',m:'v.比较',e:"Don't compare yourself to others.",ez:"不要拿自己和别人比较。"},
+  {w:'compete',p:'/kəmˈpiːt/',m:'v.竞争',e:"They compete fiercely for the top prize.",ez:"他们为头奖激烈竞争。"},
+  {w:'complain',p:'/kəmˈpleɪn/',m:'v.抱怨',e:"Stop complaining and do something!",ez:"别抱怨了,做点什么!"},
+  {w:'confirm',p:'/kənˈfɜːm/',m:'v.确认',e:"Please confirm your email address.",ez:"请确认你的邮箱地址。"},
+  {w:'connect',p:'/kəˈnekt/',m:'v.连接',e:"Can you connect to the WiFi?",ez:"你能连上WiFi吗?"},
+  {w:'contain',p:'/kənˈteɪn/',m:'v.包含',e:"This drink contains no sugar.",ez:"这饮料不含糖。"},
+  {w:'convince',p:'/kənˈvɪns/',m:'v.说服',e:"I tried to convince him to come.",ez:"我试图说服他来。"},
+  {w:'cooperate',p:'/kəʊˈɒpəreɪt/',m:'v.合作',e:"We need to cooperate to finish on time.",ez:"我们需要合作才能按时完成。"},
+  {w:'courage',p:'/ˈkʌrɪdʒ/',m:'n.勇气',e:"It takes courage to speak up.",ez:"说出来需要勇气。"},
+  {w:'damage',p:'/ˈdæmɪdʒ/',m:'n./v.损坏',e:"The storm caused serious damage.",ez:"暴风雨造成了严重损坏。"},
+  {w:'deal',p:'/diːl/',m:'v.处理 n.交易',e:"It's a deal!",ez:"成交!"},
+  {w:'debate',p:'/dɪˈbeɪt/',m:'n./v.辩论',e:"They debated the issue for hours.",ez:"他们就这个问题辩论了好几个小时。"},
+  {w:'decline',p:'/dɪˈklaɪn/',m:'v.下降,婉拒',e:"I had to decline the invitation.",ez:"我不得不婉拒了邀请。"},
+  {w:'decorate',p:'/ˈdekəreɪt/',m:'v.装饰',e:"Let's decorate the room for the party.",ez:"我们来为派对装饰房间吧。"},
+  {w:'defend',p:'/dɪˈfend/',m:'v.辩护,防守',e:"She defended her point of view well.",ez:"她很好地捍卫了自己的观点。"},
+  {w:'define',p:'/dɪˈfaɪn/',m:'v.定义',e:"How do you define success?",ez:"你怎么定义成功?"},
+  {w:'deliver',p:'/dɪˈlɪvər/',m:'v.递送,发表',e:"Can you deliver the package today?",ez:"你今天能送货吗?"},
+  {w:'demand',p:'/dɪˈmɑːnd/',m:'n./v.需求',e:"There's a high demand for this product.",ez:"这个产品需求很大。"},
+  {w:'depend',p:'/dɪˈpend/',m:'v.依赖',e:"It depends on the weather.",ez:"这取决于天气。"},
+  {w:'desire',p:'/dɪˈzaɪər/',m:'n./v.渴望',e:"She has a strong desire to learn.",ez:"她有强烈的学习欲望。"},
+  {w:'detail',p:'/ˈdiːteɪl/',m:'n.细节',e:"Pay attention to the details.",ez:"注意细节。"},
+  {w:'determine',p:'/dɪˈtɜːmɪn/',m:'v.决定',e:"Age shouldn't determine your ability.",ez:"年龄不应决定你的能力。"},
+  {w:'devote',p:'/dɪˈvəʊt/',m:'v.致力于',e:"She devoted her life to education.",ez:"她毕生致力于教育事业。"},
+  {w:'disappear',p:'/ˌdɪsəˈpɪər/',m:'v.消失',e:"The sun disappeared behind the clouds.",ez:"太阳消失在云层后面。"},
+  {w:'distinguish',p:'/dɪˈstɪŋɡwɪʃ/',m:'v.区分',e:"Can you distinguish the two sounds?",ez:"你能区分这两个声音吗?"},
+  {w:'distribute',p:'/dɪˈstrɪbjuːt/',m:'v.分发',e:"Please distribute these flyers.",ez:"请分发这些传单。"},
+  {w:'doubt',p:'/daʊt/',m:'n./v.怀疑',e:"I doubt he will come on time.",ez:"我怀疑他会准时来。"},
+  {w:'eager',p:'/ˈiːɡər/',m:'adj.渴望的',e:"She's eager to start her new job.",ez:"她渴望开始新工作。"},
+  {w:'earn',p:'/ɜːn/',m:'v.赚取',e:"How much do you earn per month?",ez:"你每月赚多少?"},
+  {w:'educate',p:'/ˈedʒukeɪt/',m:'v.教育',e:"It's important to educate children early.",ez:"早期教育孩子很重要。"},
+  {w:'embarrass',p:'/ɪmˈbærəs/',m:'v.使尴尬',e:"I felt embarrassed when I fell.",ez:"我摔倒时感到很尴尬。"},
+  {w:'emerge',p:'/ɪˈmɜːdʒ/',m:'v.出现',e:"New problems emerged after the change.",ez:"���变后出现了新问题。"},
+  {w:'emotion',p:'/ɪˈməʊʃn/',m:'n.情绪',e:"He has difficulty expressing emotion.",ez:"他表达情绪有困难。"},
+  {w:'employ',p:'/ɪmˈplɔɪ/',m:'v.雇用',e:"The company employs over 500 people.",ez:"这家公司雇用了500多人。"},
+  {w:'enable',p:'/ɪˈneɪbl/',m:'v.使能够',e:"This app enables fast payment.",ez:"这个应用可以实现快速支付。"},
+  {w:'engage',p:'/ɪnˈɡeɪdʒ/',m:'v.参与,吸引',e:"The teacher tries to engage every student.",ez:"老师努力让每个学生参与。"},
+  {w:'ensure',p:'/ɪnˈʃʊər/',m:'v.确保',e:"Please ensure the door is locked.",ez:"请确保门锁好了。"},
+  {w:'entertain',p:'/ˌentəˈteɪn/',m:'v.娱乐',e:"She entertained the kids with magic tricks.",ez:"她用魔术逗孩子们开心。"},
+  {w:'entire',p:'/ɪnˈtaɪər/',m:'adj.整个的',e:"I spent the entire day cleaning.",ez:"我花了一整天打扫。"},
+  {w:'envy',p:'/ˈenvi/',m:'n./v.嫉妒',e:"Don't envy others' success.",ez:"别嫉妒别人的成功。"},
+  {w:'equal',p:'/ˈiːkwəl/',m:'adj.平等的',e:"Everyone should have equal opportunities.",ez:"每个人都应有平等的机会。"},
+  {w:'equip',p:'/ɪˈkwɪp/',m:'v.装备',e:"The kitchen is fully equipped.",ez:"厨房设备齐全。"},
+  {w:'escape',p:'/ɪˈskeɪp/',m:'v.逃跑',e:"The prisoner tried to escape.",ez:"囚犯试图逃跑。"},
+  {w:'evaluate',p:'/ɪˈvæljueɪt/',m:'v.评估',e:"We need to evaluate the results.",ez:"我们需要评估结果。"},
+  {w:'eventually',p:'/ɪˈventʃuəli/',m:'adv.最终',e:"Eventually, everything worked out fine.",ez:"最终一切都很顺利。"},
+  {w:'evidence',p:'/ˈevɪdəns/',m:'n.证据',e:"There's no evidence to support that claim.",ez:"没有证据支持那个说法。"},
+  {w:'exact',p:'/ɪɡˈzækt/',m:'adj.精确的',e:"What's the exact location?",ez:"具体位置在哪?"},
+  {w:'exchange',p:'/ɪksˈtʃeɪndʒ/',m:'v.交换',e:"We exchanged phone numbers.",ez:"我们交换了电话号码。"},
+  {w:'exist',p:'/ɪɡˈzɪst/',m:'v.存在',e:"Does life exist on other planets?",ez:"其他星球上有生命存在吗?"},
+  {w:'expand',p:'/ɪkˈspænd/',m:'v.扩展',e:"The company plans to expand overseas.",ez:"公司计划扩展到海外。"},
+  {w:'expect',p:'/ɪkˈspekt/',m:'v.期望',e:"I expect you to be on time.",ez:"我希望你能准时。"},
+  {w:'express',p:'/ɪkˈspres/',m:'v.表达',e:"It's hard to express my feelings.",ez:"很难表达我的感受。"},
+  {w:'extreme',p:'/ɪkˈstriːm/',m:'adj.极端的',e:"The weather was extreme this summer.",ez:"今年夏天天气很极端。"},
 ];
 
 // 场景库:每个场景5个核心句型+中文翻译
@@ -979,6 +1057,7 @@ function renderDayDetail(dateKey){
   const words=getTodayWords(dateKey);
   const knownIdx=wc&&wc.known?wc.known:[];
   const knownCount=knownIdx.length;
+  const todayScene=getTodayScene(dateKey);
   const sceneDetail=sc?`${sc.sceneName||sc.scene} · ${sc.minutes||0}分钟 ✓`:'未打卡';
 
   let wordsHtml=words.map((wd,i)=>{
@@ -989,6 +1068,17 @@ function renderDayDetail(dateKey){
         <div class="dd-w-en">${wd.w} <span class="dd-w-ph">${wd.p}</span></div>
         <div class="dd-w-cn">${wd.m}</div>
         <div class="dd-w-eg">${escapeHtml(wd.e)}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // 场景英语5个句子
+  let sceneSentencesHtml=todayScene.sentences.map((s,i)=>{
+    return `<div class="dd-scene-row">
+      <div class="dd-scene-num">${i+1}</div>
+      <div class="dd-scene-content">
+        <div class="dd-scene-en">${escapeHtml(s.en)}<button class="speak-btn" data-speak="${escapeHtml(s.en)}" onclick="event.stopPropagation();speakText(this)" ontouchend="event.stopPropagation();event.preventDefault();speakText(this)">🔊</button></div>
+        <div class="dd-scene-zh">${escapeHtml(s.zh)}</div>
       </div>
     </div>`;
   }).join('');
@@ -1006,8 +1096,9 @@ function renderDayDetail(dateKey){
           ${knownCount<8?`<div style="margin-top:8px;text-align:center"><button class="btn" style="background:var(--green);color:#fff;font-size:12px;padding:6px 14px;border:none;border-radius:8px" onclick="markAllWords('${dateKey}')" ontouchend="event.preventDefault();markAllWords('${dateKey}')">全部标记已掌握</button></div>`:''}
         </div>
         <div class="dd-section">
-          <div class="dd-label">🎭 场景英语</div>
-          <div class="dd-value">${sceneDetail}</div>
+          <div class="dd-label">🎭 场景英语：${todayScene.icon} ${todayScene.name} ${sc?'✓':''}</div>
+          <div class="dd-scene-list">${sceneSentencesHtml}</div>
+          <div class="dd-value" style="margin-top:6px">${sceneDetail}</div>
           ${!sc?`<div style="margin-top:6px"><button class="btn" style="background:var(--accent);color:#fff;font-size:12px;padding:6px 14px;border:none;border-radius:8px" onclick="supplementScene('${dateKey}')" ontouchend="event.preventDefault();supplementScene('${dateKey}')">补场景打卡</button></div>`:''}
         </div>
       </div>
