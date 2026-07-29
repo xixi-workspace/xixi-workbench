@@ -153,6 +153,14 @@
   .dd-scene-content{flex:1;min-width:0}
   .dd-scene-en{font-size:14px;color:var(--text);line-height:1.4}
   .dd-scene-zh{font-size:12px;color:var(--muted);margin-top:2px}
+  /* 每日任务列表 */
+  .dd-task-list{margin-top:4px}
+  .dd-task-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+  .dd-task-row.dd-task-done{opacity:.7}
+  .dd-task-check{font-size:16px;flex-shrink:0}
+  .dd-task-cat{font-size:14px;flex-shrink:0}
+  .dd-task-text{flex:1;color:var(--text)}
+  .dd-task-tag{font-size:11px;color:var(--muted);background:var(--panel2);padding:2px 6px;border-radius:4px;flex-shrink:0}
   .calendar-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px}
   .calendar-header{display:flex;align-items:center;justify-content:space-between;padding:4px 4px 12px}
   .calendar-header h2{font-size:15px;font-weight:600}
@@ -1059,6 +1067,8 @@ function renderDayDetail(dateKey){
   const knownCount=knownIdx.length;
   const todayScene=getTodayScene(dateKey);
   const sceneDetail=sc?`${sc.sceneName||sc.scene} · ${sc.minutes||0}分钟 ✓`:'未打卡';
+  const taskRec=state.taskCheckin&&state.taskCheckin[dateKey]?state.taskCheckin[dateKey]:{};
+  const taskCount=Object.keys(taskRec).length;
 
   let wordsHtml=words.map((wd,i)=>{
     const known=knownIdx.includes(i);
@@ -1087,13 +1097,17 @@ function renderDayDetail(dateKey){
     <div class="dd-inline-panel">
       <div class="dd-inline-header">
         <h3>📅 ${dateLabel}</h3>
-        <div class="dd-inline-sub">${isToday?'今天':'历史记录'} · 单词 ${knownCount}/8 · 场景${sc?'已打卡':'未打卡'}</div>
+        <div class="dd-inline-sub">${isToday?'今天':'历史记录'} · 单词 ${knownCount}/8 · 任务${taskCount}项 · 场景${sc?'已打卡':'未打卡'}</div>
       </div>
       <div class="dd-inline-body">
         <div class="dd-section">
           <div class="dd-label">📖 单词打卡（${knownCount}/8）</div>
           <div class="dd-words-list">${wordsHtml}</div>
           ${knownCount<8?`<div style="margin-top:8px;text-align:center"><button class="btn" style="background:var(--green);color:#fff;font-size:12px;padding:6px 14px;border:none;border-radius:8px" onclick="markAllWords('${dateKey}')" ontouchend="event.preventDefault();markAllWords('${dateKey}')">全部标记已掌握</button></div>`:''}
+        </div>
+        <div class="dd-section">
+          <div class="dd-label">✅ 每日任务（${taskCount}项已完成）</div>
+          <div class="dd-task-list">${renderTaskList(dateKey,taskRec)}</div>
         </div>
         <div class="dd-section">
           <div class="dd-label">🎭 场景英语：${todayScene.icon} ${todayScene.name} ${sc?'✓':''}</div>
@@ -1107,6 +1121,38 @@ function renderDayDetail(dateKey){
       </div>
     </div>
   `;
+}
+
+function renderTaskList(dateKey,taskRec){
+  const tk=todayKey();
+  const isToday=(dateKey===tk);
+  // 如果是今天,用当前 sport/custom 的 done 状态
+  // 如果是历史日期,用 taskCheckin 记录
+  let allTasks=[];
+  if(isToday){
+    state.sport.forEach(i=>allTasks.push({text:i.text,tag:i.tag,done:i.done,cat:'🏃'}));
+    state.custom.forEach(i=>allTasks.push({text:i.text,tag:i.tag,done:i.done,cat:'📌'}));
+  }else{
+    // 历史:用 taskCheckin 记录,只显示已完成的
+    // 同时也显示当前 sport/custom 的任务名(标记为未完成)
+    state.sport.forEach(i=>{
+      const done=!!taskRec[i.id];
+      allTasks.push({text:i.text,tag:i.tag,done:done,cat:'🏃'});
+    });
+    state.custom.forEach(i=>{
+      const done=!!taskRec[i.id];
+      allTasks.push({text:i.text,tag:i.tag,done:done,cat:'📌'});
+    });
+  }
+  if(allTasks.length===0)return '<div style="font-size:12px;color:var(--muted);padding:4px 0">无任务记录</div>';
+  return allTasks.map(t=>`
+    <div class="dd-task-row ${t.done?'dd-task-done':''}">
+      <span class="dd-task-check">${t.done?'✅':'⬜'}</span>
+      <span class="dd-task-cat">${t.cat}</span>
+      <span class="dd-task-text">${escapeHtml(t.text)}</span>
+      <span class="dd-task-tag">${escapeHtml(t.tag||'')}</span>
+    </div>
+  `).join('');
 }
 
 function changeMonth(delta){
@@ -1183,6 +1229,7 @@ function resetToday(){
   // 删除今日打卡记录
   delete state.wordCheckin[tk];
   delete state.sceneCheckin[tk];
+  if(state.taskCheckin)delete state.taskCheckin[tk];
   saveState();renderPlan();
 }
 
@@ -1206,7 +1253,18 @@ document.getElementById('sidebar').addEventListener('click',e=>{
 // 勾选/取消完成(内联调用,确保手机端可靠)
 function toggleItem(id,key){
   const item=state[key].find(i=>i.id===id);
-  if(item)item.done=!item.done;
+  if(item){
+    item.done=!item.done;
+    // 记录到按日期的任务打卡
+    const tk=todayKey();
+    if(!state.taskCheckin)state.taskCheckin={};
+    if(!state.taskCheckin[tk])state.taskCheckin[tk]={};
+    if(item.done){
+      state.taskCheckin[tk][id]={text:item.text,tag:item.tag,key:key,ts:Date.now()};
+    }else{
+      delete state.taskCheckin[tk][id];
+    }
+  }
   saveState();renderPlan();
 }
 
